@@ -1,0 +1,9 @@
+#board {
+    aspect-ratio: 1/1;
+    width: calc(36rem + 2px)
+}
+
+#board > div {
+    aspect-ratio: 3/1;
+}
+
