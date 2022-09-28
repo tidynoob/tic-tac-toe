@@ -7,3 +7,10 @@
     aspect-ratio: 3/1;
 }
 
+#board img {
+    filter: invert(10%) sepia(0%) saturate(0%) hue-rotate(37deg) brightness(103%) contrast(89%);
+}
+
+.x-icon {
+    width: 75%;
+}
