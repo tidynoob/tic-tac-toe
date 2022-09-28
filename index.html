@@ -10,16 +10,67 @@
     <title>Tic-Tac-Toe</title>
     <link href="https://cdn.jsdelivr.net/npm/halfmoon@1.1.1/css/halfmoon-variables.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="style.css">
+    <script src="https://kit.fontawesome.com/78330b2ed6.js" crossorigin="anonymous"></script>
 
 </head>
 
 <body data-dm-shortcut-enabled="true" data-set-preferred-mode-onload="true">
-    <div class="page-wrapper with-navbar bg-light">
-        <nav class="navbar shadow z-10">
-            <div class="navbar-brand mx-auto">
+    <div class="page-wrapper with-navbar with-sidebar bg-light" data-sidebar-type="overlayed-sm-and-down">
+        <nav class="navbar shadow z-10 d-flex justify-content-between">
+            <button class="btn btn-action" type="button" onclick="halfmoon.toggleSidebar()">
+                <i class="fa fa-bars" aria-hidden="true"></i>
+                <span class="sr-only">Toggle sidebar</span> <!-- sr-only = show only on screen readers -->
+            </button>
+            <div class="navbar-brand">
                 Tic-Tac-Toe
             </div>
+            <button class="btn invisible"></button>
         </nav>
+        <div class="sidebar shadow">
+            <div class="sidebar-menu">
+                <div class="sidebar-title font-weight-bold">
+                    Options
+                </div>
+                <div class="sidebar-divider">
+                </div>
+                <div class="sidebar-content mt-10">
+                    <form action="" method="" class="form-inline">
+                        <div class="form-group d-flex justify-content-between">
+                            <div class="font-weight-medium">Player X:</div>
+                            <div class="d-flex align-items-center">
+                                <div class="align-middle">Human</div>
+                                <div class="custom-switch ml-10">
+                                    <input type="checkbox" id="player1" value="">
+                                    <label for="player1">Bot</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group d-flex justify-content-between">
+                            <div class="font-weight-medium">Player O:</div>
+                            <div class="d-flex align-items-center">
+                                <span class="align-middle d-inline">Human</span>
+                                <div class="custom-switch ml-10">
+                                    <input type="checkbox" id="player2" value="">
+                                    <label for="player2">Bot</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <select class="form-control d-block" id="bot-difficulty" disabled="disabled">
+                                <option value="" selected="selected" disabled="disabled">Select the AI difficulty</option>
+                                <option value="easy">Easy</option>
+                                <option value="hard">Hard</option>
+                                <option value="impossible">Impossible</option>
+                            </select>
+                        </div>
+                        <div class="form-group d-flex">
+                            <button id="startGame" class="btn btn-primary flex-grow-1" type="button">Start Game</button>
+                            <button id="reset" class="btn flex-grow-1" type="button" disabled="disabled">Reset</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         <div class="content-wrapper">
             <div class="container">
                 <div id="board" class="card mx-auto shadow-sm">
@@ -55,8 +106,10 @@
                             class="col border-left border-top d-flex justify-content-center align-items-center blank">
                         </div>
                     </div>
-
                 </div>
+            </div>
+            <div id="gameStatus" class="content mx-auto">
+                <h2 class="card-title text-center"></h2>
             </div>
         </div>
     </div>

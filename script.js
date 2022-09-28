@@ -117,8 +117,8 @@ const gameController = (() => {
     let _gameInProgress = false;
     let _gameStatus = '';
 
-    let player1 = playerFactory('x', false);
-    let player2 = playerFactory('o', false);
+    // let player1 = playerFactory('x', false);
+    // let player2 = playerFactory('o', false);
 
     let gameInProgress = () => _gameInProgress;
 
@@ -183,3 +183,27 @@ const gameController = (() => {
 
 })();
 
+let displayController = (() => {
+
+    let _player1 = document.querySelector('#player1');
+    let _player2 = document.querySelector('#player2');
+    let _botDifficulty = document.querySelector('#bot-difficulty');
+    let _startGame = document.querySelector('#startGame');
+    let _reset = document.querySelector('#reset');
+    let _gameStatus = document.querySelector('#gameStatus');
+
+    let getPlayers = () => {
+        if (_player1.checked == true) {
+            let player1 = playerFactory('x', true)
+        } else {
+            let player1 = playerFactory('x', false)
+        }
+        if (_player2.checked == true) {
+            let player2 = playerFactory('x', true)
+        } else {
+            let player2 = playerFactory('x', false)
+        }
+        return {player1, player2}
+    } 
+
+})();
