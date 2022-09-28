@@ -1,8 +1,13 @@
 const playerFactory = (sign, bot) => {
-    let getSign = () => sign;
-    let getBot = () => bot;
+    let _sign = sign;
+    let _bot = bot;
+    let _currentTurn = false;
 
-    return { getSign, getBot }
+    let getSign = () => _sign;
+    let getBot = () => _bot;
+    let currentTurn = (symbolTurn) => _curreTurn = symbolTurn;
+
+    return { getSign, getBot, currentTurn }
 };
 
 const gameBoard = (() => {
@@ -16,7 +21,7 @@ const gameBoard = (() => {
     let _addSymbolToArray = (e) => {
         let tile = e.target
         let index = tile.dataset.index;
-        _gameBoard[index] = gameController.nextSign();
+        _gameBoard[index] = gameController.nextTurn();
 
     };
 
@@ -81,15 +86,25 @@ const gameBoard = (() => {
                     _addSymbolToArray(e);
                     _addSymbolToDoc(e);
                     _removeListener();
+                    gameController.endGame();
                 }
             }, true)
         });
     };
 
+    let reset = () => {
+        _gameBoard = new Array(9);
+        let imgs = document.querySelectorAll('img.w-three-quarter');
+        imgs.forEach(img => {img.remove()});
+        let tiles = document.querySelectorAll('.blank');
+        tiles.forEach(tile => { tile.removeEventListener('click', tile.fn, true)});
+    }
+
     return {
         checkStatus,
         addListeners,
-        _gameBoard
+        reset
+        // _gameBoard
     }
 
 })();
@@ -100,42 +115,71 @@ const gameController = (() => {
     let _turnCounter = 0;
     let _nextSign = '';
     let _gameInProgress = false;
+    let _gameStatus = '';
 
-    let gameInProgress = () => gameInProgress;
+    let player1 = playerFactory('x', false);
+    let player2 = playerFactory('o', false);
 
-    let nextSign = () => {
+    let gameInProgress = () => _gameInProgress;
+
+    let gameStatus = () => _gameStatus;
+
+    let nextTurn = () => {
         // console.log(_turnCounter)
         if (_turnCounter % 2 == 0) {
-            _nextSign = 'x'
+            _nextSign = 'x';
+            player1.currentTurn(false);
+            player2.currentTurn(true);
+            _gameStatus = "O's turn";
         } else {
-            _nextSign = 'o'
+            _nextSign = 'o';
+            player2.currentTurn(false);
+            player1.currentTurn(true);
+            _gameStatus = "X's turn";
+
         };
+        console.log(_gameStatus);
         _turnCounter++;
         return _nextSign
     };
 
     let startGame = () => {
-        // gameBoard.resetBoard();
+        gameBoard.reset();
         gameBoard.addListeners();
         _turnCounter = 0;
         _nextSign = '';
         _gameInProgress = true;
-
+        _gameStatus = "X's turn"
+        player1.currentTurn(true);
     }
 
     let endGame = () => {
-        _gameInProgress = false;
+        let threeInRow = gameBoard.checkStatus().threeInRow
+        let winningSymbol = gameBoard.checkStatus().winningSymbol
+        if (_turnCounter >= 8 || threeInRow == true) {
+            _gameInProgress = false;
+            player1.currentTurn(false);
+            player2.currentTurn(false);
+            if (threeInRow == false) {
+                _gameStatus = "It's a draw!"
+            } else if (winningSymbol = 'x') {
+                _gameStatus = "X wins!"
+            } else {
+                _gameStatus = "O wins!"
+            }
+            console.log(_gameStatus)
+        }
     }
 
     return {
-        nextSign,
+        nextTurn,
         startGame,
         endGame,
-        gameInProgress
+        gameInProgress,
+        gameStatus,
+        player1,
+        player2,
     };
 
 })();
 
-
-let player1 = playerFactory('x', false);
-let player2 = playerFactory('o', false);
