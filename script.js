@@ -5,7 +5,9 @@ const playerFactory = (sign, bot) => {
 
     let getSign = () => _sign;
     let getBot = () => _bot;
-    let currentTurn = (symbolTurn) => _curreTurn = symbolTurn;
+    const currentTurn = symbolTurn => {
+        _currentTurn = symbolTurn
+    };
 
     return { getSign, getBot, currentTurn }
 };
@@ -46,6 +48,8 @@ const gameBoard = (() => {
         let tile = document.querySelector('.clicked');
         tile.removeEventListener('click', tile.fn, true);
     }
+
+    let getGameBoard = () => _gameBoard;
 
     let checkStatus = () => {
         if ((_gameBoard[0] == _gameBoard[1]) && (_gameBoard[0] == _gameBoard[2]) && (_gameBoard[0] == 'x') ||
@@ -94,17 +98,19 @@ const gameBoard = (() => {
 
     let reset = () => {
         _gameBoard = new Array(9);
+        _threeInRow = false;
+        _winningSymbol = '';
         let imgs = document.querySelectorAll('img.w-three-quarter');
-        imgs.forEach(img => {img.remove()});
+        imgs.forEach(img => { img.remove() });
         let tiles = document.querySelectorAll('.blank');
-        tiles.forEach(tile => { tile.removeEventListener('click', tile.fn, true)});
+        tiles.forEach(tile => { tile.removeEventListener('click', tile.fn, true) });
     }
 
     return {
         checkStatus,
         addListeners,
-        reset
-        // _gameBoard
+        reset,
+        getGameBoard,
     }
 
 })();
@@ -117,12 +123,12 @@ const gameController = (() => {
     let _gameInProgress = false;
     let _gameStatus = '';
 
-    // let player1 = playerFactory('x', false);
-    // let player2 = playerFactory('o', false);
-
     let gameInProgress = () => _gameInProgress;
 
     let gameStatus = () => _gameStatus;
+
+    let player1 = {};
+    let player2 = {};
 
     let nextTurn = () => {
         // console.log(_turnCounter)
@@ -138,7 +144,7 @@ const gameController = (() => {
             _gameStatus = "X's turn";
 
         };
-        console.log(_gameStatus);
+        displayController.updateGameStatus(_gameStatus);
         _turnCounter++;
         return _nextSign
     };
@@ -146,17 +152,22 @@ const gameController = (() => {
     let startGame = () => {
         gameBoard.reset();
         gameBoard.addListeners();
+        // console.log(displayController.getPlayers());
+        player1 = displayController.getPlayers()[0];
+        player2 = displayController.getPlayers()[1];
+        // console.log(player1);
         _turnCounter = 0;
         _nextSign = '';
         _gameInProgress = true;
-        _gameStatus = "X's turn"
+        _gameStatus = "X's turn";
+        displayController.updateGameStatus(_gameStatus);
         player1.currentTurn(true);
     }
 
     let endGame = () => {
         let threeInRow = gameBoard.checkStatus().threeInRow
         let winningSymbol = gameBoard.checkStatus().winningSymbol
-        if (_turnCounter >= 8 || threeInRow == true) {
+        if (_turnCounter >= 9 || threeInRow == true) {
             _gameInProgress = false;
             player1.currentTurn(false);
             player2.currentTurn(false);
@@ -167,8 +178,22 @@ const gameController = (() => {
             } else {
                 _gameStatus = "O wins!"
             }
-            console.log(_gameStatus)
+            displayController.updateGameStatus(_gameStatus);
+            halfmoon.toggleSidebar();
+
         }
+    }
+
+    let resetGame = () => {
+        _turnCounter = 0;
+        _nextSign = '';
+        _gameInProgress = false;
+        _gameStatus = 'Game has been reset';
+        displayController.updateGameStatus(_gameStatus);
+        player1.currentTurn(false);
+        player2.currentTurn(false);
+        gameBoard.reset();
+
     }
 
     return {
@@ -177,33 +202,99 @@ const gameController = (() => {
         endGame,
         gameInProgress,
         gameStatus,
-        player1,
-        player2,
+        resetGame
     };
 
 })();
 
 let displayController = (() => {
+    'use strict';
 
     let _player1 = document.querySelector('#player1');
     let _player2 = document.querySelector('#player2');
     let _botDifficulty = document.querySelector('#bot-difficulty');
     let _startGame = document.querySelector('#startGame');
     let _reset = document.querySelector('#reset');
-    let _gameStatus = document.querySelector('#gameStatus');
+    let _gameStatus = document.querySelector('#gameStatus > h2');
+
+    let _toggleClickable = (button) => {
+        if (button.disabled == true) {
+            button.disabled = false;
+        } else {
+            button.disabled = true;
+        }
+    }
+
+    let _disableClick = (button) => {
+        button.disabled = true;
+    }
+
+    let _checkIfClickable = (button) => {
+        if (_getBot(_player1) || _getBot(_player2)) {
+            button.disabled = false;
+        } else {
+            button.disabled = true;
+        }
+    }
+
+    let _getBot = (playerButton) => {
+        return playerButton.checked ? true : false
+    }
 
     let getPlayers = () => {
-        if (_player1.checked == true) {
-            let player1 = playerFactory('x', true)
-        } else {
-            let player1 = playerFactory('x', false)
-        }
-        if (_player2.checked == true) {
-            let player2 = playerFactory('x', true)
-        } else {
-            let player2 = playerFactory('x', false)
-        }
-        return {player1, player2}
-    } 
+        let player1 = playerFactory('x', _getBot(_player1));
+        let player2 = playerFactory('x', _getBot(_player2));
+        return [player1, player2]
+    };
+
+    let updateGameStatus = (status) => {
+        _gameStatus.innerText = status;
+    }
+
+    let addListeners = () => {
+        _startGame.addEventListener('click', (e) => {
+            if (!gameController.gameInProgress()) {
+                _toggleClickable(_startGame);
+                _toggleClickable(_player1);
+                _toggleClickable(_player2);
+                _toggleClickable(_reset);
+                _disableClick(_botDifficulty);
+                gameController.startGame();
+                halfmoon.toggleSidebar();
+            }
+        });
+
+        _reset.addEventListener('click', (e) => {
+            _toggleClickable(_startGame);
+            _toggleClickable(_player1);
+            _toggleClickable(_player2);
+            _toggleClickable(_reset);
+            _checkIfClickable(_botDifficulty);
+            gameController.resetGame();
+        });
+
+        _player1.addEventListener('change', (e) => {
+            console.log(e.target.checked);
+            _checkIfClickable(_botDifficulty);
+        })
+
+        _player2.addEventListener('change', (e) => {
+            _checkIfClickable(_botDifficulty);
+        })
+    }
+
+    return {
+        addListeners,
+        getPlayers,
+        updateGameStatus
+    }
 
 })();
+
+let AI => (() => {
+
+})();
+
+window.addEventListener('DOMContentLoaded', (event) => {
+    displayController.addListeners();
+});
