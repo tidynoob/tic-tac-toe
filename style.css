@@ -34,3 +34,7 @@
     left: 0 !important;
     width: 100% !important;
 }
+
+#gameStatus > h2 {
+    font-size: 3rem;
+}
