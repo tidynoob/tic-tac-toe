@@ -291,7 +291,7 @@ let displayController = (() => {
 
 })();
 
-let AI => (() => {
+let AI = (() => {
 
 })();
 

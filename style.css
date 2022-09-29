@@ -1,8 +1,8 @@
 /* Custom styling and Halfmoon Overrides */
 
-:root {
+/* :root { */
     /* --sidebar-width: 20rem; */
-}
+/* } */
 
 #board, #gameStatus {
     width: calc(36rem + 2px);
