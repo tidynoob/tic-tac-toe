@@ -5,17 +5,18 @@ const playerFactory = (sign, bot) => {
 
     let getSign = () => _sign;
     let getBot = () => _bot;
+    let currentPlayer = () => _currentTurn;
     const currentTurn = symbolTurn => {
         _currentTurn = symbolTurn
     };
 
-    return { getSign, getBot, currentTurn }
+    return { getSign, getBot, currentTurn, currentPlayer }
 };
 
 const gameBoard = (() => {
     'use strict';
 
-    let _gameBoard = new Array(9);
+    let _gameBoard = new Array(9).fill('');
 
     let _threeInRow = false;
     let _winningSymbol = '';
@@ -50,6 +51,10 @@ const gameBoard = (() => {
     }
 
     let getGameBoard = () => _gameBoard;
+
+    // let botInput = (index, sign) => {
+    //     _gameBoard[index] = sign
+    // }
 
     let checkStatus = () => {
         if ((_gameBoard[0] == _gameBoard[1]) && (_gameBoard[0] == _gameBoard[2]) && (_gameBoard[0] == 'x') ||
@@ -91,13 +96,14 @@ const gameBoard = (() => {
                     _addSymbolToDoc(e);
                     _removeListener();
                     gameController.endGame();
+                    AI.botMakeMove(gameController.getCurrentPlayer());
                 }
             }, true)
         });
     };
 
     let reset = () => {
-        _gameBoard = new Array(9);
+        _gameBoard = new Array(9).fill('');
         _threeInRow = false;
         _winningSymbol = '';
         let imgs = document.querySelectorAll('img.w-three-quarter');
@@ -130,15 +136,22 @@ const gameController = (() => {
     let player1 = {};
     let player2 = {};
 
+    let getCurrentPlayer = () => {
+        return (player1.currentPlayer()) ? player1 : player2
+    }
+
     let nextTurn = () => {
         // console.log(_turnCounter)
         if (_turnCounter % 2 == 0) {
             _nextSign = 'x';
+            // AI.botMakeMove(player1);            
             player1.currentTurn(false);
             player2.currentTurn(true);
             _gameStatus = "O's turn";
         } else {
             _nextSign = 'o';
+            // _nextSign = player2.getSign();
+            // AI.botMakeMove(player2);
             player2.currentTurn(false);
             player1.currentTurn(true);
             _gameStatus = "X's turn";
@@ -148,6 +161,14 @@ const gameController = (() => {
         _turnCounter++;
         return _nextSign
     };
+
+    let getNextSign = () => {
+        return _nextSign
+    }
+
+    let getTurnCounter = () => {
+        return _turnCounter
+    }
 
     let startGame = () => {
         gameBoard.reset();
@@ -162,6 +183,7 @@ const gameController = (() => {
         _gameStatus = "X's turn";
         displayController.updateGameStatus(_gameStatus);
         player1.currentTurn(true);
+        AI.botMakeMove(getCurrentPlayer());
     }
 
     let endGame = () => {
@@ -202,7 +224,10 @@ const gameController = (() => {
         endGame,
         gameInProgress,
         gameStatus,
-        resetGame
+        resetGame,
+        getNextSign,
+        getCurrentPlayer,
+        getTurnCounter,
     };
 
 })();
@@ -239,6 +264,11 @@ let displayController = (() => {
 
     let _getBot = (playerButton) => {
         return playerButton.checked ? true : false
+    }
+
+    let getBotDifficulty = () => {
+        console.log(_botDifficulty.value);
+        return _botDifficulty.value
     }
 
     let getPlayers = () => {
@@ -286,12 +316,67 @@ let displayController = (() => {
     return {
         addListeners,
         getPlayers,
-        updateGameStatus
+        updateGameStatus,
+        getBotDifficulty
     }
 
 })();
 
 let AI = (() => {
+
+    let _gameBoard = new Array()
+
+    _getAvailableMoves = () => {
+        _gameBoard = gameBoard.getGameBoard();
+        let blanks = _gameBoard.reduce((a, e, i) => {
+            if (e == '') a.push(i)
+            return a;
+        }, []);
+        // console.log(blanks);
+        return blanks;
+    }
+
+    _randomIndex = (array) => {
+        return array[Math.floor((Math.random() * array.length))];
+    }
+
+    _indexOfMove = () => {
+        let index = '';
+        let difficulty = displayController.getBotDifficulty();
+        let turnCounter = gameController.getTurnCounter();
+        let availableMoves = _getAvailableMoves();
+
+        if (difficulty == 'easy') {
+            index = _randomIndex(availableMoves);
+            // console.log(index);
+        } else if (difficulty == 'hard') {
+
+            // first move
+            if (turnCounter == 0) {
+
+            }
+
+        }
+        console.log(index);
+        return index;
+    }
+
+    botMakeMove = (player) => {
+        // console.log('test');
+        if (player.getBot() && player.currentPlayer()) {
+            // let sign = gameController.getNextSign();
+            let index = _indexOfMove(_getAvailableMoves());
+            // gameBoard.botInput(index, sign);
+            let tile = document.querySelector(`[data-index="${index}"]`);
+            // console.log(tile);
+            setTimeout(() => { tile.click() }, 1000);
+        }
+
+    }
+
+    return {
+        botMakeMove,
+    }
 
 })();
 
