@@ -46,8 +46,10 @@ const gameBoard = (() => {
     }
 
     let _removeListener = () => {
-        let tile = document.querySelector('.clicked');
-        tile.removeEventListener('click', tile.fn, true);
+        let tiles = document.querySelectorAll('.clicked');
+        tiles.forEach(tile => {
+            tile.removeEventListener('click', tile.fn, true);
+        });
     }
 
     let _winningStates = [
@@ -61,28 +63,24 @@ const gameBoard = (() => {
         [2, 4, 6]
     ];
 
+    let getWinningStates = () => _winningStates;
+
     let getGameBoard = () => _gameBoard;
 
     let checkStatus = () => {
-        // console.log(_gameBoard)
         _winningStates.forEach(state => {
-            // console.log(state)
 
             let gamePartition = _gameBoard.filter((element, index) => {
-                // console.log(state.includes(index));
                 return state.includes(index);
             });
 
-            // console.log(gamePartition);
             let result = gamePartition.every(element => {
-                // console.log(element);
                 if (element === gamePartition[0] && element) {
                     return true
                 }
             });
 
             if (result) {
-                // console.log(gamePartition);
                 _threeInRow = true;
                 _winningSymbol = gamePartition[0];
             }
@@ -104,7 +102,6 @@ const gameBoard = (() => {
                     _addSymbolToDoc(e);
                     _removeListener();
                     gameController.endGame();
-                    // console.log(gameController.getCurrentPlayer());
                     AI.botMakeMove(gameController.getCurrentPlayer());
                 }
             }, true)
@@ -129,6 +126,7 @@ const gameBoard = (() => {
         addListeners,
         reset,
         getGameBoard,
+        getWinningStates,
     }
 
 })();
@@ -141,6 +139,18 @@ const gameController = (() => {
     let _gameInProgress = false;
     let _gameStatus = '';
 
+    let toggleCurrentTurn = () => {
+        if (player1.currentPlayer()) {
+            player1.currentTurn(false);
+            player2.currentTurn(true);
+            _gameStatus = "O's turn";
+        } else {
+            player1.currentTurn(true);
+            player2.currentTurn(false);
+            _gameStatus = "X's turn";
+        }
+    }
+
     let gameInProgress = () => _gameInProgress;
 
     let gameStatus = () => _gameStatus;
@@ -149,26 +159,17 @@ const gameController = (() => {
     let player2 = {};
 
     let getCurrentPlayer = () => {
-        return (player1.currentPlayer()) ? player1 : player2
+        if (player1.currentPlayer()) {
+            return player1
+        } else {
+            return player2
+        }
     }
 
     let nextTurn = () => {
-        // console.log(_turnCounter)
-        if (_turnCounter % 2 == 0) {
-            _nextSign = 'x';
-            // AI.botMakeMove(player1);            
-            player1.currentTurn(false);
-            player2.currentTurn(true);
-            _gameStatus = "O's turn";
-        } else {
-            _nextSign = 'o';
-            // _nextSign = player2.getSign();
-            // AI.botMakeMove(player2);
-            player2.currentTurn(false);
-            player1.currentTurn(true);
-            _gameStatus = "X's turn";
 
-        };
+        _nextSign = getCurrentPlayer().getSign();
+        gameController.toggleCurrentTurn();
         displayController.updateGameStatus(_gameStatus);
         _turnCounter++;
         return _nextSign
@@ -185,23 +186,21 @@ const gameController = (() => {
     let startGame = () => {
         gameBoard.reset();
         gameBoard.addListeners();
-        // console.log(displayController.getPlayers());
         player1 = displayController.getPlayers()[0];
         player2 = displayController.getPlayers()[1];
-        // console.log(player1);
         _turnCounter = 0;
-        _nextSign = '';
         _gameInProgress = true;
         _gameStatus = "X's turn";
         displayController.updateGameStatus(_gameStatus);
         player1.currentTurn(true);
+        _nextSign = player1.getSign();
         AI.botMakeMove(getCurrentPlayer());
+
     }
 
     let endGame = () => {
         let threeInRow = gameBoard.checkStatus().threeInRow;
         let winningSymbol = gameBoard.checkStatus().winningSymbol;
-        // console.log(winningSymbol);
         if (_turnCounter >= 9 || threeInRow == true) {
             _gameInProgress = false;
             player1.currentTurn(false);
@@ -241,6 +240,7 @@ const gameController = (() => {
         getNextSign,
         getCurrentPlayer,
         getTurnCounter,
+        toggleCurrentTurn,
     };
 
 })();
@@ -280,13 +280,12 @@ let displayController = (() => {
     }
 
     let getBotDifficulty = () => {
-        // console.log(_botDifficulty.value);
         return _botDifficulty.value
     }
 
     let getPlayers = () => {
         let player1 = playerFactory('x', _getBot(_player1));
-        let player2 = playerFactory('x', _getBot(_player2));
+        let player2 = playerFactory('o', _getBot(_player2));
         return [player1, player2]
     };
 
@@ -317,7 +316,6 @@ let displayController = (() => {
         });
 
         _player1.addEventListener('change', (e) => {
-            // console.log(e.target.checked);
             _checkIfClickable(_botDifficulty);
         })
 
@@ -337,15 +335,14 @@ let displayController = (() => {
 
 let AI = (() => {
 
-    let _gameBoard = new Array()
+    // let _gameBoard = new Array()
 
-    _getAvailableMoves = () => {
-        _gameBoard = gameBoard.getGameBoard();
-        let blanks = _gameBoard.reduce((a, e, i) => {
+    _getAvailableMoves = (gameBoard) => {
+        // _gameBoard = gameBoard.getGameBoard();
+        let blanks = gameBoard.reduce((a, e, i) => {
             if (e == '') a.push(i)
             return a;
         }, []);
-        // console.log(blanks);
         return blanks;
     }
 
@@ -353,38 +350,77 @@ let AI = (() => {
         return array[Math.floor((Math.random() * array.length))];
     }
 
+    _twoInRowCheck = (sign) => {
+        let _winningStates = gameBoard.getWinningStates();
+        let _gameBoard = gameBoard.getGameBoard();
+
+        // let twoInRowStates = [];
+        let indexOfThird = '10';
+
+        _winningStates.forEach(state => {
+            let gamePartition = _gameBoard.filter((element, index) => {
+                return state.includes(index);
+            });
+
+            let signCount = gamePartition.reduce((allSigns, sign) => {
+                const currCount = allSigns[sign] ?? 0;
+                return {
+                    ...allSigns,
+                    [sign]: currCount + 1,
+                };
+            }, {})
+
+            let result = (signCount[''] == 1 && signCount[sign] == 2) ? true : false;
+
+            if (result) {
+                indexOfThird = state[gamePartition.indexOf('')];
+            }
+        });
+
+        return indexOfThird
+    }
+
+    let _minimax = (gameBoard, currentPlayer) => {
+        let availableMoves = _getAvailableMoves(gameBoard);
+
+    }
+
     _indexOfMove = () => {
         let index = '';
         let difficulty = displayController.getBotDifficulty();
         let turnCounter = gameController.getTurnCounter();
-        let availableMoves = _getAvailableMoves();
+        let availableMoves = _getAvailableMoves(gameBoard.getGameBoard());
+        let currentSign = gameController.getCurrentPlayer().getSign();
+        let altSign = (currentSign == 'x') ? 'o' : 'x';
+        let thirdInRow = _twoInRowCheck(currentSign);
+        let thirdInRowAlt = _twoInRowCheck(altSign);
+        console.log(thirdInRowAlt);
 
         if (difficulty == 'easy') {
             index = _randomIndex(availableMoves);
-            // console.log(index);
         } else if (difficulty == 'hard') {
 
-            // first move
-            if (turnCounter == 0) {
+            // check if opponent has two in row and block
+            // also check if bot has two in row and finish that
 
+            if (thirdInRow != '10') {
+                index = thirdInRow
+            } else if (thirdInRowAlt != '10') {
+                index = thirdInRowAlt
+            } else {
+                index = _randomIndex(availableMoves)
             }
 
         }
-        // console.log(index);
+
         return index;
     }
 
     botMakeMove = (player) => {
-        // console.log('test');
         if (player.getBot() && player.currentPlayer()) {
-            // console.log("passed check")
-            // let sign = gameController.getNextSign();
-            let index = _indexOfMove(_getAvailableMoves());
-            // gameBoard.botInput(index, sign);
+            let index = _indexOfMove();
             let tile = document.querySelector(`[data-index="${index}"]`);
-            // console.log(tile);
             setTimeout(() => { tile.click() }, 1000);
-            // tile.click();
         }
 
     }
