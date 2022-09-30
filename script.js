@@ -57,26 +57,26 @@ const gameBoard = (() => {
     // }
 
     let checkStatus = () => {
-        if ((_gameBoard[0] == _gameBoard[1]) && (_gameBoard[0] == _gameBoard[2]) && (_gameBoard[0] == 'x') ||
-            (_gameBoard[3] == _gameBoard[4]) && (_gameBoard[3] == _gameBoard[5]) && (_gameBoard[3] == 'x') ||
-            (_gameBoard[6] == _gameBoard[7]) && (_gameBoard[6] == _gameBoard[8]) && (_gameBoard[6] == 'x') ||
-            (_gameBoard[0] == _gameBoard[3]) && (_gameBoard[0] == _gameBoard[6]) && (_gameBoard[0] == 'x') ||
-            (_gameBoard[1] == _gameBoard[4]) && (_gameBoard[1] == _gameBoard[7]) && (_gameBoard[1] == 'x') ||
-            (_gameBoard[2] == _gameBoard[5]) && (_gameBoard[2] == _gameBoard[8]) && (_gameBoard[2] == 'x') ||
-            (_gameBoard[0] == _gameBoard[4]) && (_gameBoard[0] == _gameBoard[8]) && (_gameBoard[0] == 'x') ||
-            (_gameBoard[6] == _gameBoard[4]) && (_gameBoard[6] == _gameBoard[2]) && (_gameBoard[6] == 'x')) {
+        if (((_gameBoard[0] == _gameBoard[1]) && (_gameBoard[0] == _gameBoard[2]) && (_gameBoard[0] == 'x')) ||
+            ((_gameBoard[3] == _gameBoard[4]) && (_gameBoard[3] == _gameBoard[5]) && (_gameBoard[3] == 'x')) ||
+            ((_gameBoard[6] == _gameBoard[7]) && (_gameBoard[6] == _gameBoard[8]) && (_gameBoard[6] == 'x')) ||
+            ((_gameBoard[0] == _gameBoard[3]) && (_gameBoard[0] == _gameBoard[6]) && (_gameBoard[0] == 'x')) ||
+            ((_gameBoard[1] == _gameBoard[4]) && (_gameBoard[1] == _gameBoard[7]) && (_gameBoard[1] == 'x')) ||
+            ((_gameBoard[2] == _gameBoard[5]) && (_gameBoard[2] == _gameBoard[8]) && (_gameBoard[2] == 'x')) ||
+            ((_gameBoard[0] == _gameBoard[4]) && (_gameBoard[0] == _gameBoard[8]) && (_gameBoard[0] == 'x')) ||
+            ((_gameBoard[6] == _gameBoard[4]) && (_gameBoard[6] == _gameBoard[2]) && (_gameBoard[6] == 'x'))) {
             _threeInRow = true;
             _winningSymbol = 'x';
 
         }
-        if ((_gameBoard[0] == _gameBoard[1]) && (_gameBoard[0] == _gameBoard[2]) && (_gameBoard[0] == 'o') ||
-            (_gameBoard[3] == _gameBoard[4]) && (_gameBoard[3] == _gameBoard[5]) && (_gameBoard[3] == 'o') ||
-            (_gameBoard[6] == _gameBoard[7]) && (_gameBoard[6] == _gameBoard[8]) && (_gameBoard[6] == 'o') ||
-            (_gameBoard[0] == _gameBoard[3]) && (_gameBoard[0] == _gameBoard[6]) && (_gameBoard[0] == 'o') ||
-            (_gameBoard[1] == _gameBoard[4]) && (_gameBoard[1] == _gameBoard[7]) && (_gameBoard[1] == 'o') ||
-            (_gameBoard[2] == _gameBoard[5]) && (_gameBoard[2] == _gameBoard[8]) && (_gameBoard[2] == 'o') ||
-            (_gameBoard[0] == _gameBoard[4]) && (_gameBoard[0] == _gameBoard[8]) && (_gameBoard[0] == 'o') ||
-            (_gameBoard[6] == _gameBoard[4]) && (_gameBoard[6] == _gameBoard[2]) && (_gameBoard[6] == 'o')) {
+        if (((_gameBoard[0] == _gameBoard[1]) && (_gameBoard[0] == _gameBoard[2]) && (_gameBoard[0] == 'o')) ||
+            ((_gameBoard[3] == _gameBoard[4]) && (_gameBoard[3] == _gameBoard[5]) && (_gameBoard[3] == 'o')) ||
+            ((_gameBoard[6] == _gameBoard[7]) && (_gameBoard[6] == _gameBoard[8]) && (_gameBoard[6] == 'o')) ||
+            ((_gameBoard[0] == _gameBoard[3]) && (_gameBoard[0] == _gameBoard[6]) && (_gameBoard[0] == 'o')) ||
+            ((_gameBoard[1] == _gameBoard[4]) && (_gameBoard[1] == _gameBoard[7]) && (_gameBoard[1] == 'o')) ||
+            ((_gameBoard[2] == _gameBoard[5]) && (_gameBoard[2] == _gameBoard[8]) && (_gameBoard[2] == 'o')) ||
+            ((_gameBoard[0] == _gameBoard[4]) && (_gameBoard[0] == _gameBoard[8]) && (_gameBoard[0] == 'o')) ||
+            ((_gameBoard[6] == _gameBoard[4]) && (_gameBoard[6] == _gameBoard[2]) && (_gameBoard[6] == 'o'))) {
             _threeInRow = true;
             _winningSymbol = 'o';
         }
@@ -96,6 +96,7 @@ const gameBoard = (() => {
                     _addSymbolToDoc(e);
                     _removeListener();
                     gameController.endGame();
+                    console.log(gameController.getCurrentPlayer());
                     AI.botMakeMove(gameController.getCurrentPlayer());
                 }
             }, true)
@@ -109,7 +110,10 @@ const gameBoard = (() => {
         let imgs = document.querySelectorAll('img.w-three-quarter');
         imgs.forEach(img => { img.remove() });
         let tiles = document.querySelectorAll('.blank');
-        tiles.forEach(tile => { tile.removeEventListener('click', tile.fn, true) });
+        tiles.forEach(tile => {
+            tile.classList.remove('clicked');
+            tile.removeEventListener('click', tile.fn, true);
+        });
     }
 
     return {
@@ -267,7 +271,7 @@ let displayController = (() => {
     }
 
     let getBotDifficulty = () => {
-        console.log(_botDifficulty.value);
+        // console.log(_botDifficulty.value);
         return _botDifficulty.value
     }
 
@@ -304,7 +308,7 @@ let displayController = (() => {
         });
 
         _player1.addEventListener('change', (e) => {
-            console.log(e.target.checked);
+            // console.log(e.target.checked);
             _checkIfClickable(_botDifficulty);
         })
 
@@ -364,12 +368,14 @@ let AI = (() => {
     botMakeMove = (player) => {
         // console.log('test');
         if (player.getBot() && player.currentPlayer()) {
+            console.log("passed check")
             // let sign = gameController.getNextSign();
             let index = _indexOfMove(_getAvailableMoves());
             // gameBoard.botInput(index, sign);
             let tile = document.querySelector(`[data-index="${index}"]`);
             // console.log(tile);
-            setTimeout(() => { tile.click() }, 1000);
+            // setTimeout(() => { tile.click() }, 1000);
+            tile.click();
         }
 
     }
