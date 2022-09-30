@@ -67,10 +67,14 @@ const gameBoard = (() => {
 
     let getGameBoard = () => _gameBoard;
 
-    let checkStatus = () => {
+    let checkStatus = (gameBoard) => {
+
+        let threeInRow = false;
+        let winningSymbol = '';
+
         _winningStates.forEach(state => {
 
-            let gamePartition = _gameBoard.filter((element, index) => {
+            let gamePartition = gameBoard.filter((element, index) => {
                 return state.includes(index);
             });
 
@@ -81,14 +85,14 @@ const gameBoard = (() => {
             });
 
             if (result) {
-                _threeInRow = true;
-                _winningSymbol = gamePartition[0];
+                threeInRow = true;
+                winningSymbol = gamePartition[0];
             }
         });
 
         return {
-            threeInRow: _threeInRow,
-            winningSymbol: _winningSymbol
+            threeInRow,
+            winningSymbol
         };
 
     }
@@ -199,8 +203,8 @@ const gameController = (() => {
     }
 
     let endGame = () => {
-        let threeInRow = gameBoard.checkStatus().threeInRow;
-        let winningSymbol = gameBoard.checkStatus().winningSymbol;
+        let threeInRow = gameBoard.checkStatus(gameBoard.getGameBoard()).threeInRow;
+        let winningSymbol = gameBoard.checkStatus(gameBoard.getGameBoard()).winningSymbol;
         if (_turnCounter >= 9 || threeInRow == true) {
             _gameInProgress = false;
             player1.currentTurn(false);
@@ -335,10 +339,7 @@ let displayController = (() => {
 
 let AI = (() => {
 
-    // let _gameBoard = new Array()
-
     _getAvailableMoves = (gameBoard) => {
-        // _gameBoard = gameBoard.getGameBoard();
         let blanks = gameBoard.reduce((a, e, i) => {
             if (e == '') a.push(i)
             return a;
@@ -354,7 +355,6 @@ let AI = (() => {
         let _winningStates = gameBoard.getWinningStates();
         let _gameBoard = gameBoard.getGameBoard();
 
-        // let twoInRowStates = [];
         let indexOfThird = '10';
 
         _winningStates.forEach(state => {
@@ -380,8 +380,64 @@ let AI = (() => {
         return indexOfThird
     }
 
-    let _minimax = (gameBoard, currentPlayer) => {
-        let availableMoves = _getAvailableMoves(gameBoard);
+    let _minimax = (_gameBoard, currentSign) => {
+        let good = currentSign;
+        let bad = (currentSign == 'x') ? 'o' : 'x';
+        let __gameBoard = _gameBoard;
+
+        let __minimax = (__gameBoard, player) => {
+            let availableMoves = _getAvailableMoves(__gameBoard);
+
+            if (gameBoard.checkStatus(__gameBoard).winningSymbol == good) {
+                return { score: 10 }
+            } else if (gameBoard.checkStatus(__gameBoard).winningSymbol == bad) {
+                return { score: -10 }
+            } else if (availableMoves.length == 0) {
+                return { score: 0 }
+            }
+
+            let moves = [];
+            for (let i = 0; i < availableMoves.length; i++) {
+                let move = {};
+                move.index = availableMoves[i];
+                __gameBoard[availableMoves[i]] = player;
+
+                if (player == good) {
+                    var result = __minimax(__gameBoard, bad);
+                    move.score = result.score;
+                } else {
+                    var result = __minimax(__gameBoard, good);
+                    move.score = result.score;
+                }
+                __gameBoard[availableMoves[i]] = '';
+                moves.push(move);
+            };
+
+            var bestMove;
+            if (player == good) {
+                var bestScore = -10000;
+                for (let i = 0; i < moves.length; i++) {
+                    if (moves[i].score > bestScore) {
+                        bestScore = moves[i].score;
+                        bestMove = i;
+                    }
+                }
+            } else {
+                var bestScore = 10000;
+                for (let i = 0; i < moves.length; i++) {
+                    if (moves[i].score < bestScore) {
+                        bestScore = moves[i].score;
+                        bestMove = i;
+                    }
+                }
+            }
+
+            return moves[bestMove];
+        };
+
+        let move = __minimax(__gameBoard, good);
+
+        return move.index;
 
     }
 
@@ -394,11 +450,8 @@ let AI = (() => {
         let altSign = (currentSign == 'x') ? 'o' : 'x';
         let thirdInRow = _twoInRowCheck(currentSign);
         let thirdInRowAlt = _twoInRowCheck(altSign);
-        console.log(thirdInRowAlt);
 
-        if (difficulty == 'easy') {
-            index = _randomIndex(availableMoves);
-        } else if (difficulty == 'hard') {
+        if (difficulty == 'hard') {
 
             // check if opponent has two in row and block
             // also check if bot has two in row and finish that
@@ -410,7 +463,11 @@ let AI = (() => {
             } else {
                 index = _randomIndex(availableMoves)
             }
-
+        } else if (difficulty == 'impossible') {
+            index = _minimax(gameBoard.getGameBoard(), currentSign);
+        } else {
+            // easy move / default
+            index = _randomIndex(availableMoves);
         }
 
         return index;
