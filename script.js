@@ -50,42 +50,50 @@ const gameBoard = (() => {
         tile.removeEventListener('click', tile.fn, true);
     }
 
+    let _winningStates = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6]
+    ];
+
     let getGameBoard = () => _gameBoard;
 
-    // let botInput = (index, sign) => {
-    //     _gameBoard[index] = sign
-    // }
-
     let checkStatus = () => {
-        if (((_gameBoard[0] == _gameBoard[1]) && (_gameBoard[0] == _gameBoard[2]) && (_gameBoard[0] == 'x')) ||
-            ((_gameBoard[3] == _gameBoard[4]) && (_gameBoard[3] == _gameBoard[5]) && (_gameBoard[3] == 'x')) ||
-            ((_gameBoard[6] == _gameBoard[7]) && (_gameBoard[6] == _gameBoard[8]) && (_gameBoard[6] == 'x')) ||
-            ((_gameBoard[0] == _gameBoard[3]) && (_gameBoard[0] == _gameBoard[6]) && (_gameBoard[0] == 'x')) ||
-            ((_gameBoard[1] == _gameBoard[4]) && (_gameBoard[1] == _gameBoard[7]) && (_gameBoard[1] == 'x')) ||
-            ((_gameBoard[2] == _gameBoard[5]) && (_gameBoard[2] == _gameBoard[8]) && (_gameBoard[2] == 'x')) ||
-            ((_gameBoard[0] == _gameBoard[4]) && (_gameBoard[0] == _gameBoard[8]) && (_gameBoard[0] == 'x')) ||
-            ((_gameBoard[6] == _gameBoard[4]) && (_gameBoard[6] == _gameBoard[2]) && (_gameBoard[6] == 'x'))) {
-            _threeInRow = true;
-            _winningSymbol = 'x';
+        // console.log(_gameBoard)
+        _winningStates.forEach(state => {
+            // console.log(state)
 
-        }
-        if (((_gameBoard[0] == _gameBoard[1]) && (_gameBoard[0] == _gameBoard[2]) && (_gameBoard[0] == 'o')) ||
-            ((_gameBoard[3] == _gameBoard[4]) && (_gameBoard[3] == _gameBoard[5]) && (_gameBoard[3] == 'o')) ||
-            ((_gameBoard[6] == _gameBoard[7]) && (_gameBoard[6] == _gameBoard[8]) && (_gameBoard[6] == 'o')) ||
-            ((_gameBoard[0] == _gameBoard[3]) && (_gameBoard[0] == _gameBoard[6]) && (_gameBoard[0] == 'o')) ||
-            ((_gameBoard[1] == _gameBoard[4]) && (_gameBoard[1] == _gameBoard[7]) && (_gameBoard[1] == 'o')) ||
-            ((_gameBoard[2] == _gameBoard[5]) && (_gameBoard[2] == _gameBoard[8]) && (_gameBoard[2] == 'o')) ||
-            ((_gameBoard[0] == _gameBoard[4]) && (_gameBoard[0] == _gameBoard[8]) && (_gameBoard[0] == 'o')) ||
-            ((_gameBoard[6] == _gameBoard[4]) && (_gameBoard[6] == _gameBoard[2]) && (_gameBoard[6] == 'o'))) {
-            _threeInRow = true;
-            _winningSymbol = 'o';
-        }
+            let gamePartition = _gameBoard.filter((element, index) => {
+                // console.log(state.includes(index));
+                return state.includes(index);
+            });
+
+            // console.log(gamePartition);
+            let result = gamePartition.every(element => {
+                // console.log(element);
+                if (element === gamePartition[0] && element) {
+                    return true
+                }
+            });
+
+            if (result) {
+                // console.log(gamePartition);
+                _threeInRow = true;
+                _winningSymbol = gamePartition[0];
+            }
+        });
 
         return {
             threeInRow: _threeInRow,
             winningSymbol: _winningSymbol
         };
-    };
+
+    }
 
     let addListeners = () => {
         let tiles = document.querySelectorAll('.blank');
@@ -96,7 +104,7 @@ const gameBoard = (() => {
                     _addSymbolToDoc(e);
                     _removeListener();
                     gameController.endGame();
-                    console.log(gameController.getCurrentPlayer());
+                    // console.log(gameController.getCurrentPlayer());
                     AI.botMakeMove(gameController.getCurrentPlayer());
                 }
             }, true)
@@ -191,15 +199,16 @@ const gameController = (() => {
     }
 
     let endGame = () => {
-        let threeInRow = gameBoard.checkStatus().threeInRow
-        let winningSymbol = gameBoard.checkStatus().winningSymbol
+        let threeInRow = gameBoard.checkStatus().threeInRow;
+        let winningSymbol = gameBoard.checkStatus().winningSymbol;
+        // console.log(winningSymbol);
         if (_turnCounter >= 9 || threeInRow == true) {
             _gameInProgress = false;
             player1.currentTurn(false);
             player2.currentTurn(false);
             if (threeInRow == false) {
                 _gameStatus = "It's a draw!"
-            } else if (winningSymbol = 'x') {
+            } else if (winningSymbol == 'x') {
                 _gameStatus = "X wins!"
             } else {
                 _gameStatus = "O wins!"
@@ -361,21 +370,21 @@ let AI = (() => {
             }
 
         }
-        console.log(index);
+        // console.log(index);
         return index;
     }
 
     botMakeMove = (player) => {
         // console.log('test');
         if (player.getBot() && player.currentPlayer()) {
-            console.log("passed check")
+            // console.log("passed check")
             // let sign = gameController.getNextSign();
             let index = _indexOfMove(_getAvailableMoves());
             // gameBoard.botInput(index, sign);
             let tile = document.querySelector(`[data-index="${index}"]`);
             // console.log(tile);
-            // setTimeout(() => { tile.click() }, 1000);
-            tile.click();
+            setTimeout(() => { tile.click() }, 1000);
+            // tile.click();
         }
 
     }
