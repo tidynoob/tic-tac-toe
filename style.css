@@ -17,6 +17,24 @@
     aspect-ratio: 3/1;
 }
 
+.blank {
+    cursor:pointer;
+}
+
+.blank:hover {
+    background-color: var(--gray-color-light);
+}
+
+.blank.clicked {
+    cursor:auto;
+    background-color: var(--white-bg-color);
+}
+
+.blocked.blank {
+    cursor:auto;
+    background-color: var(--white-bg-color);
+}
+
 #board img {
     filter: invert(10%) sepia(0%) saturate(0%) hue-rotate(37deg) brightness(103%) contrast(89%);
 }

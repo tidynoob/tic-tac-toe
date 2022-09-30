@@ -188,6 +188,7 @@ const gameController = (() => {
     }
 
     let startGame = () => {
+        displayController.removeBlocked();
         gameBoard.reset();
         gameBoard.addListeners();
         player1 = displayController.getPlayers()[0];
@@ -217,6 +218,7 @@ const gameController = (() => {
                 _gameStatus = "O wins!"
             }
             displayController.updateGameStatus(_gameStatus);
+            displayController.addBlocked();
             halfmoon.toggleSidebar();
 
         }
@@ -259,6 +261,7 @@ let displayController = (() => {
     let _reset = document.querySelector('#reset');
     let _gameStatus = document.querySelector('#gameStatus > h2');
     let _errorText = document.querySelector('.invalid-feedback');
+    let _blocked = document.querySelectorAll('.blocked');
 
     let _toggleClickable = (button) => {
         if (button.disabled == true) {
@@ -283,6 +286,18 @@ let displayController = (() => {
 
     let _getBot = (playerButton) => {
         return playerButton.checked ? true : false
+    }
+
+    let removeBlocked = () => {
+        _blocked.forEach(tile => {
+            tile.classList.remove('blocked');
+        })
+    }
+
+    let addBlocked = () => {
+        _blocked.forEach(tile => {
+            tile.classList.add('blocked');
+        })
     }
 
     let getBotDifficulty = () => {
@@ -346,7 +361,9 @@ let displayController = (() => {
         addListeners,
         getPlayers,
         updateGameStatus,
-        getBotDifficulty
+        getBotDifficulty,
+        removeBlocked,
+        addBlocked
     }
 
 })();
