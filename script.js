@@ -52,6 +52,13 @@ const gameBoard = (() => {
         });
     }
 
+    let highlightTiles = (indeces) => {
+        indeces.forEach(index => {
+            let tile = document.querySelector(`[data-index="${index}"]`);
+            tile.classList.add('winner');
+        })
+    }
+
     let _winningStates = [
         [0, 1, 2],
         [3, 4, 5],
@@ -71,6 +78,7 @@ const gameBoard = (() => {
 
         let threeInRow = false;
         let winningSymbol = '';
+        let winningState = [];
 
         _winningStates.forEach(state => {
 
@@ -87,10 +95,12 @@ const gameBoard = (() => {
             if (result) {
                 threeInRow = true;
                 winningSymbol = gamePartition[0];
+                winningState = state;
             }
         });
 
         return {
+            winningState,
             threeInRow,
             winningSymbol
         };
@@ -120,7 +130,7 @@ const gameBoard = (() => {
         imgs.forEach(img => { img.remove() });
         let tiles = document.querySelectorAll('.blank');
         tiles.forEach(tile => {
-            tile.classList.remove('clicked');
+            tile.classList.remove('clicked','winner');
             tile.removeEventListener('click', tile.fn, true);
         });
     }
@@ -131,6 +141,7 @@ const gameBoard = (() => {
         reset,
         getGameBoard,
         getWinningStates,
+        highlightTiles
     }
 
 })();
@@ -206,6 +217,7 @@ const gameController = (() => {
     let endGame = () => {
         let threeInRow = gameBoard.checkStatus(gameBoard.getGameBoard()).threeInRow;
         let winningSymbol = gameBoard.checkStatus(gameBoard.getGameBoard()).winningSymbol;
+        let winningState = gameBoard.checkStatus(gameBoard.getGameBoard()).winningState;
         if (_turnCounter >= 9 || threeInRow == true) {
             _gameInProgress = false;
             player1.currentTurn(false);
@@ -217,6 +229,7 @@ const gameController = (() => {
             } else {
                 _gameStatus = "O wins!"
             }
+            gameBoard.highlightTiles(winningState);
             displayController.updateGameStatus(_gameStatus);
             displayController.addBlocked();
             halfmoon.toggleSidebar();
