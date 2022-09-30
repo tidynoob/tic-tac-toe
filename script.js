@@ -258,6 +258,7 @@ let displayController = (() => {
     let _startGame = document.querySelector('#startGame');
     let _reset = document.querySelector('#reset');
     let _gameStatus = document.querySelector('#gameStatus > h2');
+    let _errorText = document.querySelector('.invalid-feedback');
 
     let _toggleClickable = (button) => {
         if (button.disabled == true) {
@@ -274,6 +275,7 @@ let displayController = (() => {
     let _checkIfClickable = (button) => {
         if (_getBot(_player1) || _getBot(_player2)) {
             button.disabled = false;
+            button.classList.add('required')
         } else {
             button.disabled = true;
         }
@@ -299,6 +301,13 @@ let displayController = (() => {
 
     let addListeners = () => {
         _startGame.addEventListener('click', (e) => {
+            if (_botDifficulty.disabled == false && getBotDifficulty() == '') {
+                _errorText.classList.remove('invisible');
+                _botDifficulty.classList.add('is-invalid');
+                return;
+            }
+
+
             if (!gameController.gameInProgress()) {
                 _toggleClickable(_startGame);
                 _toggleClickable(_player1);
@@ -325,6 +334,11 @@ let displayController = (() => {
 
         _player2.addEventListener('change', (e) => {
             _checkIfClickable(_botDifficulty);
+        })
+
+        _botDifficulty.addEventListener('change', (e) => {
+            _errorText.classList.add('invisible');
+            _botDifficulty.classList.remove('is-invalid');
         })
     }
 
