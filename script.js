@@ -1,3 +1,5 @@
+const memoizationCache = {}
+
 const playerFactory = (sign, bot) => {
     let _sign = sign;
     let _bot = bot;
@@ -540,6 +542,10 @@ let AI = (() => {
         let alpha = -100;
         let beta = 100;
         let __minimaxAB = (__gameBoard, player, alpha, beta) => {
+            const hash = __gameBoard.join()+player;
+            if (memoizationCache[hash] !== undefined) {
+                return memoizationCache[hash];
+            }
             let availableMoves = _getAvailableMoves(__gameBoard);
 
             if (gameBoard.checkStatus(__gameBoard).winningSymbol == good) {
@@ -596,7 +602,7 @@ let AI = (() => {
                     }
                 }
             }
-
+            memoizationCache[hash] = bestMove;
             return bestMove;
         };
 
