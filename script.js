@@ -288,12 +288,10 @@ let displayController = (() => {
     let _player2 = document.querySelector('#player2');
     let _botDifficulty = document.querySelector('#bot-difficulty');
     let _startGame = document.querySelector('#startGame');
-    let _testPerf = document.querySelector('#testPerf');
     let _reset = document.querySelector('#reset');
     let _gameStatus = document.querySelector('#gameStatus > h2');
     let _errorText = document.querySelector('.invalid-feedback');
     let _blocked = document.querySelectorAll('.blocked');
-    let _useAlphaBeta = document.querySelector('#usealphabeta')
 
     let _toggleClickable = (button) => {
         if (button.disabled == true) {
@@ -332,10 +330,6 @@ let displayController = (() => {
         })
     }
 
-    let useAlphaBeta = () => {
-        return !_useAlphaBeta.checked;
-    }
-
     let getBotDifficulty = () => {
         return _botDifficulty.value
     }
@@ -363,48 +357,12 @@ let displayController = (() => {
                 _toggleClickable(_startGame);
                 _toggleClickable(_player1);
                 _toggleClickable(_player2);
-                _toggleClickable(_useAlphaBeta);
                 _toggleClickable(_reset);
-                _toggleClickable(_testPerf);
                 _disableClick(_botDifficulty);
                 gameController.startGame();
                 halfmoon.toggleSidebar();
             }
         });
-
-        _testPerf.addEventListener('click', (e) => {
-            _testPerfRunner();
-        });
-
-        let _testPerfRunner = async () => {
-            gameController.setArtificialBotDelay(0);
-            const count = 10;
-            const times = [];
-
-            const createGamePromise = () => {
-                let startTime;
-                let endTime;
-                const gamePromise = new Promise(function(res,rej) {
-                    gameController.setEndGameResolver(res);
-                    startTime = performance.now();
-                    gameController.startGame();
-                });
-                return gamePromise.then(() => {
-                    endTime = performance.now();
-                    times.push(endTime - startTime);
-                });
-            }
-
-            for (let i = 0; i<count; i++) {
-                await createGamePromise();
-                gameController.resetGame();
-            }
-
-            const average = times.reduce((a, b) => a + b, 0) / times.length;
-            displayController.updateGameStatus(`Average time it took to run ${count} games is ${average} milliseconds`);
-
-            gameController.setArtificialBotDelay(1000);
-        }
 
         _reset.addEventListener('click', (e) => {
             _toggleClickable(_startGame);
@@ -424,10 +382,6 @@ let displayController = (() => {
             _checkIfClickable(_botDifficulty);
         })
 
-        _useAlphaBeta.addEventListener('change', (e) => {
-            _checkIfClickable(_botDifficulty);
-        })
-
         _botDifficulty.addEventListener('change', (e) => {
             _errorText.classList.add('invisible');
             _botDifficulty.classList.remove('is-invalid');
@@ -441,7 +395,6 @@ let displayController = (() => {
         getBotDifficulty,
         removeBlocked,
         addBlocked,
-        useAlphaBeta
     }
 
 })();
@@ -493,54 +446,9 @@ let AI = (() => {
         let good = currentSign;
         let bad = (currentSign == 'x') ? 'o' : 'x';
         let __gameBoard = _gameBoard;
-
-        let __minimax = (__gameBoard, player) => {
-            let availableMoves = _getAvailableMoves(__gameBoard);
-
-            if (gameBoard.checkStatus(__gameBoard).winningSymbol == good) {
-                return { score: 10 }
-            } else if (gameBoard.checkStatus(__gameBoard).winningSymbol == bad) {
-                return { score: -10 }
-            } else if (availableMoves.length == 0) {
-                return { score: 0 }
-            }
-
-            let moves = [];
-            for (let i = 0; i < availableMoves.length; i++) {
-                let move = {};
-                move.index = availableMoves[i];
-                __gameBoard[availableMoves[i]] = player;
-
-                const result = __minimax(__gameBoard, player == good ? bad : good);
-                move.score = result.score;
-                __gameBoard[availableMoves[i]] = '';
-                moves.push(move);
-            };
-
-            var bestMove;
-            if (player == good) {
-                var bestScore = -10000;
-                for (let i = 0; i < moves.length; i++) {
-                    if (moves[i].score > bestScore) {
-                        bestScore = moves[i].score;
-                        bestMove = i;
-                    }
-                }
-            } else {
-                var bestScore = 10000;
-                for (let i = 0; i < moves.length; i++) {
-                    if (moves[i].score < bestScore) {
-                        bestScore = moves[i].score;
-                        bestMove = i;
-                    }
-                }
-            }
-
-            return moves[bestMove];
-        };
-
         let alpha = -100;
         let beta = 100;
+
         let __minimaxAB = (__gameBoard, player, alpha, beta) => {
             const hash = __gameBoard.join()+player;
             if (memoizationCache[hash] !== undefined) {
@@ -606,7 +514,7 @@ let AI = (() => {
             return bestMove;
         };
 
-        let move = displayController.useAlphaBeta() ? __minimaxAB(__gameBoard, good, alpha, beta) : __minimax(__gameBoard, good);
+        let move = __minimaxAB(__gameBoard, good, alpha, beta);
 
         return move.index;
 
