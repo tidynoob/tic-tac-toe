@@ -152,7 +152,9 @@ const gameController = (() => {
     let _turnCounter = 0;
     let _nextSign = '';
     let _gameInProgress = false;
+    let _artificialBotDelay = 1000;
     let _gameStatus = '';
+    let _endGameResolver = undefined;
 
     let toggleCurrentTurn = () => {
         if (player1.currentPlayer()) {
@@ -167,6 +169,12 @@ const gameController = (() => {
     }
 
     let gameInProgress = () => _gameInProgress;
+
+    const artificialBotDelay = () => _artificialBotDelay;
+    const setArtificialBotDelay = (newVal) => _artificialBotDelay = newVal;
+
+    const endGameResolver = () => _endGameResolver;
+    const setEndGameResolver = (newVal) => _endGameResolver= newVal;
 
     let gameStatus = () => _gameStatus;
 
@@ -219,6 +227,9 @@ const gameController = (() => {
         let winningSymbol = gameBoard.checkStatus(gameBoard.getGameBoard()).winningSymbol;
         let winningState = gameBoard.checkStatus(gameBoard.getGameBoard()).winningState;
         if (_turnCounter >= 9 || threeInRow == true) {
+            if (!!_endGameResolver) {
+            _endGameResolver();
+            }
             _gameInProgress = false;
             player1.currentTurn(false);
             player2.currentTurn(false);
@@ -260,6 +271,10 @@ const gameController = (() => {
         getCurrentPlayer,
         getTurnCounter,
         toggleCurrentTurn,
+        artificialBotDelay,
+        setArtificialBotDelay,
+        endGameResolver,
+        setEndGameResolver,
     };
 
 })();
@@ -271,6 +286,7 @@ let displayController = (() => {
     let _player2 = document.querySelector('#player2');
     let _botDifficulty = document.querySelector('#bot-difficulty');
     let _startGame = document.querySelector('#startGame');
+    let _testPerf = document.querySelector('#testPerf');
     let _reset = document.querySelector('#reset');
     let _gameStatus = document.querySelector('#gameStatus > h2');
     let _errorText = document.querySelector('.invalid-feedback');
@@ -341,11 +357,46 @@ let displayController = (() => {
                 _toggleClickable(_player1);
                 _toggleClickable(_player2);
                 _toggleClickable(_reset);
+                _toggleClickable(_testPerf);
                 _disableClick(_botDifficulty);
                 gameController.startGame();
                 halfmoon.toggleSidebar();
             }
         });
+
+        _testPerf.addEventListener('click', (e) => {
+            _testPerfRunner();
+        });
+
+        let _testPerfRunner = async () => {
+            gameController.setArtificialBotDelay(0);
+            const count = 10;
+            const times = [];
+
+            const createGamePromise = () => {
+                let startTime;
+                let endTime;
+                const gamePromise = new Promise(function(res,rej) {
+                    gameController.setEndGameResolver(res);
+                    startTime = performance.now();
+                    gameController.startGame();
+                });
+                return gamePromise.then(() => {
+                    endTime = performance.now();
+                    times.push(endTime - startTime);
+                });
+            }
+
+            for (let i = 0; i<count; i++) {
+                await createGamePromise();
+                gameController.resetGame();
+            }
+
+            const average = times.reduce((a, b) => a + b, 0) / times.length;
+            displayController.updateGameStatus(`Average time it took to run ${count} games is ${average} milliseconds`);
+
+            gameController.setArtificialBotDelay(1000);
+        }
 
         _reset.addEventListener('click', (e) => {
             _toggleClickable(_startGame);
@@ -353,6 +404,7 @@ let displayController = (() => {
             _toggleClickable(_player2);
             _toggleClickable(_reset);
             _checkIfClickable(_botDifficulty);
+            _toggleClickable(_testPerf);
             gameController.resetGame();
         });
 
@@ -516,7 +568,7 @@ let AI = (() => {
         if (player.getBot() && player.currentPlayer()) {
             let index = _indexOfMove();
             let tile = document.querySelector(`[data-index="${index}"]`);
-            setTimeout(() => { tile.click() }, 1000);
+            setTimeout(() => { tile.click() }, gameController.artificialBotDelay());
         }
 
     }
