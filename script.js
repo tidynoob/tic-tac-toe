@@ -291,6 +291,7 @@ let displayController = (() => {
     let _gameStatus = document.querySelector('#gameStatus > h2');
     let _errorText = document.querySelector('.invalid-feedback');
     let _blocked = document.querySelectorAll('.blocked');
+    let _useAlphaBeta = document.querySelector('#usealphabeta')
 
     let _toggleClickable = (button) => {
         if (button.disabled == true) {
@@ -329,6 +330,10 @@ let displayController = (() => {
         })
     }
 
+    let useAlphaBeta = () => {
+        return !_useAlphaBeta.checked;
+    }
+
     let getBotDifficulty = () => {
         return _botDifficulty.value
     }
@@ -356,6 +361,7 @@ let displayController = (() => {
                 _toggleClickable(_startGame);
                 _toggleClickable(_player1);
                 _toggleClickable(_player2);
+                _toggleClickable(_useAlphaBeta);
                 _toggleClickable(_reset);
                 _toggleClickable(_testPerf);
                 _disableClick(_botDifficulty);
@@ -416,6 +422,10 @@ let displayController = (() => {
             _checkIfClickable(_botDifficulty);
         })
 
+        _useAlphaBeta.addEventListener('change', (e) => {
+            _checkIfClickable(_botDifficulty);
+        })
+
         _botDifficulty.addEventListener('change', (e) => {
             _errorText.classList.add('invisible');
             _botDifficulty.classList.remove('is-invalid');
@@ -428,7 +438,8 @@ let displayController = (() => {
         updateGameStatus,
         getBotDifficulty,
         removeBlocked,
-        addBlocked
+        addBlocked,
+        useAlphaBeta
     }
 
 })();
@@ -526,7 +537,70 @@ let AI = (() => {
             return moves[bestMove];
         };
 
-        let move = __minimax(__gameBoard, good);
+        let alpha = -100;
+        let beta = 100;
+        let __minimaxAB = (__gameBoard, player, alpha, beta) => {
+            let availableMoves = _getAvailableMoves(__gameBoard);
+
+            if (gameBoard.checkStatus(__gameBoard).winningSymbol == good) {
+                return { score: 10 }
+            } else if (gameBoard.checkStatus(__gameBoard).winningSymbol == bad) {
+                return { score: -10 }
+            } else if (availableMoves.length == 0) {
+                return { score: 0 }
+            }
+
+            var bestMove;
+            if (player == good) {
+                var bestScore = -10000;
+                for (let i = 0; i < availableMoves.length; i++) {
+                    let move = {};
+                    move.index = availableMoves[i];
+                    __gameBoard[availableMoves[i]] = player;
+
+                    const result = __minimaxAB(__gameBoard, player == good ? bad : good, alpha, beta);
+                    move.score = result.score;
+                    __gameBoard[availableMoves[i]] = '';
+
+                    if (move.score > bestScore) {
+                        bestScore = move.score;
+                        bestMove = move;
+                    }
+                    if (bestScore > alpha) {
+                        alpha = bestScore;
+                    }
+                    if (beta <= alpha) {
+                        break;
+                    }
+                }
+            } else {
+                var bestScore = 10000;
+                for (let i = 0; i < availableMoves.length; i++) {
+                    let move = {};
+                    move.index = availableMoves[i];
+                    __gameBoard[availableMoves[i]] = player;
+
+                    const result = __minimaxAB(__gameBoard, player == good ? bad : good, alpha, beta);
+                    move.score = result.score;
+                    __gameBoard[availableMoves[i]] = '';
+
+                    if (move.score < bestScore) {
+                        bestScore = move.score;
+                        bestMove = move;
+                    }
+                    if (bestScore < beta) {
+                        beta = bestScore;
+                    }
+                    if (beta <= alpha) {
+                        break;
+                    }
+                }
+            }
+
+            return bestMove;
+        };
+
+        let move = displayController.useAlphaBeta() ? __minimaxAB(__gameBoard, good, alpha, beta) : __minimax(__gameBoard, good);
 
         return move.index;
 
