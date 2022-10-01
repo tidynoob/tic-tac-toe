@@ -1,3 +1,5 @@
+const memoizationCache = {}
+
 const playerFactory = (sign, bot) => {
     let _sign = sign;
     let _bot = bot;
@@ -152,7 +154,9 @@ const gameController = (() => {
     let _turnCounter = 0;
     let _nextSign = '';
     let _gameInProgress = false;
+    let _artificialBotDelay = 1000;
     let _gameStatus = '';
+    let _endGameResolver = undefined;
 
     let toggleCurrentTurn = () => {
         if (player1.currentPlayer()) {
@@ -167,6 +171,12 @@ const gameController = (() => {
     }
 
     let gameInProgress = () => _gameInProgress;
+
+    const artificialBotDelay = () => _artificialBotDelay;
+    const setArtificialBotDelay = (newVal) => _artificialBotDelay = newVal;
+
+    const endGameResolver = () => _endGameResolver;
+    const setEndGameResolver = (newVal) => _endGameResolver= newVal;
 
     let gameStatus = () => _gameStatus;
 
@@ -219,6 +229,9 @@ const gameController = (() => {
         let winningSymbol = gameBoard.checkStatus(gameBoard.getGameBoard()).winningSymbol;
         let winningState = gameBoard.checkStatus(gameBoard.getGameBoard()).winningState;
         if (_turnCounter >= 9 || threeInRow == true) {
+            if (!!_endGameResolver) {
+            _endGameResolver();
+            }
             _gameInProgress = false;
             player1.currentTurn(false);
             player2.currentTurn(false);
@@ -260,6 +273,10 @@ const gameController = (() => {
         getCurrentPlayer,
         getTurnCounter,
         toggleCurrentTurn,
+        artificialBotDelay,
+        setArtificialBotDelay,
+        endGameResolver,
+        setEndGameResolver,
     };
 
 })();
@@ -353,6 +370,7 @@ let displayController = (() => {
             _toggleClickable(_player2);
             _toggleClickable(_reset);
             _checkIfClickable(_botDifficulty);
+            _toggleClickable(_testPerf);
             gameController.resetGame();
         });
 
@@ -376,7 +394,7 @@ let displayController = (() => {
         updateGameStatus,
         getBotDifficulty,
         removeBlocked,
-        addBlocked
+        addBlocked,
     }
 
 })();
@@ -428,8 +446,14 @@ let AI = (() => {
         let good = currentSign;
         let bad = (currentSign == 'x') ? 'o' : 'x';
         let __gameBoard = _gameBoard;
+        let alpha = -100;
+        let beta = 100;
 
-        let __minimax = (__gameBoard, player) => {
+        let __minimaxAB = (__gameBoard, player, alpha, beta) => {
+            const hash = __gameBoard.join()+player;
+            if (memoizationCache[hash] !== undefined) {
+                return memoizationCache[hash];
+            }
             let availableMoves = _getAvailableMoves(__gameBoard);
 
             if (gameBoard.checkStatus(__gameBoard).winningSymbol == good) {
@@ -440,46 +464,57 @@ let AI = (() => {
                 return { score: 0 }
             }
 
-            let moves = [];
-            for (let i = 0; i < availableMoves.length; i++) {
-                let move = {};
-                move.index = availableMoves[i];
-                __gameBoard[availableMoves[i]] = player;
-
-                if (player == good) {
-                    var result = __minimax(__gameBoard, bad);
-                    move.score = result.score;
-                } else {
-                    var result = __minimax(__gameBoard, good);
-                    move.score = result.score;
-                }
-                __gameBoard[availableMoves[i]] = '';
-                moves.push(move);
-            };
-
             var bestMove;
             if (player == good) {
                 var bestScore = -10000;
-                for (let i = 0; i < moves.length; i++) {
-                    if (moves[i].score > bestScore) {
-                        bestScore = moves[i].score;
-                        bestMove = i;
+                for (let i = 0; i < availableMoves.length; i++) {
+                    let move = {};
+                    move.index = availableMoves[i];
+                    __gameBoard[availableMoves[i]] = player;
+
+                    const result = __minimaxAB(__gameBoard, player == good ? bad : good, alpha, beta);
+                    move.score = result.score;
+                    __gameBoard[availableMoves[i]] = '';
+
+                    if (move.score > bestScore) {
+                        bestScore = move.score;
+                        bestMove = move;
+                    }
+                    if (bestScore > alpha) {
+                        alpha = bestScore;
+                    }
+                    if (beta <= alpha) {
+                        break;
                     }
                 }
             } else {
                 var bestScore = 10000;
-                for (let i = 0; i < moves.length; i++) {
-                    if (moves[i].score < bestScore) {
-                        bestScore = moves[i].score;
-                        bestMove = i;
+                for (let i = 0; i < availableMoves.length; i++) {
+                    let move = {};
+                    move.index = availableMoves[i];
+                    __gameBoard[availableMoves[i]] = player;
+
+                    const result = __minimaxAB(__gameBoard, player == good ? bad : good, alpha, beta);
+                    move.score = result.score;
+                    __gameBoard[availableMoves[i]] = '';
+
+                    if (move.score < bestScore) {
+                        bestScore = move.score;
+                        bestMove = move;
+                    }
+                    if (bestScore < beta) {
+                        beta = bestScore;
+                    }
+                    if (beta <= alpha) {
+                        break;
                     }
                 }
             }
-
-            return moves[bestMove];
+            memoizationCache[hash] = bestMove;
+            return bestMove;
         };
 
-        let move = __minimax(__gameBoard, good);
+        let move = __minimaxAB(__gameBoard, good, alpha, beta);
 
         return move.index;
 
@@ -521,7 +556,7 @@ let AI = (() => {
         if (player.getBot() && player.currentPlayer()) {
             let index = _indexOfMove();
             let tile = document.querySelector(`[data-index="${index}"]`);
-            setTimeout(() => { tile.click() }, 1000);
+            setTimeout(() => { tile.click() }, gameController.artificialBotDelay());
         }
 
     }
