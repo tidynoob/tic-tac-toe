@@ -446,13 +446,8 @@ let AI = (() => {
                 move.index = availableMoves[i];
                 __gameBoard[availableMoves[i]] = player;
 
-                if (player == good) {
-                    var result = __minimax(__gameBoard, bad);
-                    move.score = result.score;
-                } else {
-                    var result = __minimax(__gameBoard, good);
-                    move.score = result.score;
-                }
+                const result = __minimax(__gameBoard, player == good ? bad : good);
+                move.score = result.score;
                 __gameBoard[availableMoves[i]] = '';
                 moves.push(move);
             };
